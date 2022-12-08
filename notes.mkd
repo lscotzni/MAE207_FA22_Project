@@ -1,1 +1,32 @@
-*** MARKDOWN DOC FOR NOTES ***
+*** ------------------------------------------------------------ ***
+*** ------------------ MARKDOWN DOC FOR NOTES ------------------ ***
+*** ------------------------------------------------------------ ***
+
+*Code/Problem Structure*:
+- Geometry initialization
+- PDE setup
+- 
+
+*Problem Definition*:
+- Steady state electrothermal analysis of motor
+    - constant rotational speed and current amplitude
+    - p = 6, Z = 36, m = 3 (same as HF optimization)
+    - data-based models for coefficients and parameters
+        - linear dependence of resistivity for resistance calculation (copper loss)
+        - heat transfer coefficient constant in solids, and dependent on Reynolds number in air-gap (Li et al); same goes for alpha
+        - COERCIVITY AND DEMAGNETIZATION EFFECTS FROM TEMPERATURE (need to find)
+
+*Coupling Approach*:
+- EM solver runs for given temperature and calculates B-field (NL Poisson-like eq)
+- Power losses (heat sources) are calculated with the B-field
+- Power losses are fed into steady state heat equation as source terms
+    - Source terms act *PER CELL* over the geoemtry (need like a CG0 space)
+- Temperature field is calculated based on the heat equation (Poisson eq)
+- **CONVERGENCE CRITERIA**:
+    - Temperature fields between iteration *k* and *k+1* are the same (norm --> 0)
+- Feed temperature distribution back into the initial EM solver
+    - New material values based on updated temperature distribution
+
+*TO-DO, NOTES AND COMMENTS*:
+- Remove any indication of uhat because we are not doing mesh deformation
+- add angles, permeability and other parameters to the initialization step
