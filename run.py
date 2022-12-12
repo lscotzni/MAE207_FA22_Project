@@ -1,8 +1,7 @@
 from dolfin import *
 import numpy as np
 from helper_functions import *
-from em_pde import *
-from thermal_pde import *
+from coupled_pde import CoupledFEAClass
 
 import matplotlib.pyplot as plt 
 import seaborn as sns
@@ -20,31 +19,15 @@ mesh, boundaries_mf, subdomains_mf, dx, dS = initialize_geometry(
 iron_sd, pm_sd, winding_sd, air_gap_sd = get_subdomain_indices()
 
 ''' INITIALIZE PDE DETAILS '''
-V_em, V_t, V_S = initFunctionSpace(mesh=mesh)
+Coupled_FEA = CoupledFEAClass(i_amp=I_amp, mesh=mesh, dx=dx, p=p, s=s, Hc=Hc, 
+                                mech_angle=mech_angle, elec_angle=elec_angle)
 
-''' SET UP ELECTROMAGNETIC PDE '''
-EMClass = EMClass()
-EMClass.setup_EM_pde(V=V_em, i_amp=I_amp, mesh=mesh, dx=dx, p=p, s=s, 
-                    Hc=Hc, mech_angle=mech_angle, elec_angle=elec_angle)
-
-''' SET UP THERMAL PDE '''
-setup_thermal_pde()
-
-''' RUN NEWTON ITERATION '''
-EMClass.solve_EM_pde(mesh)
-# B = project(as_vector((solver_ms.A_z.dx(1), -solver_ms.A_z.dx[0])),
-#                         VectorFunctionSpace(mesh,'DG',0))
+Coupled_FEA.setup_problem()
+Coupled_FEA.solve_problem()
 
 vtkfile_A_z = File('solutions/Magnetic_Vector_Potential.pvd')
 vtkfile_B = File('solutions/Magnetic_Flux_Density.pvd')
-vtkfile_A_z << EMClass.A_z
-vtkfile_B << EMClass.B
-
-
-# shift = 15 # angular rotor shift in degrees (ccw)
-# mech_angles_deg = np.arange(0,30+1,5)
-# rotor_rotations = mech_angles_deg[:2]
-# instances = len(rotor_rotations)
-# mech_angles = (shift+rotor_rotations)*np.pi/180
-# # elec_angles = ((shift+rotor_rotations) * np.pi/180) * p/2
-# elec_angles = ((rotor_rotations) * np.pi/180) * p/2
+vtkfile_T = File('solutions/Temperature.pvd')
+vtkfile_A_z << Coupled_FEA.A_z
+vtkfile_B << Coupled_FEA.B
+vtkfile_T << Coupled_FEA.T

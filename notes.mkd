@@ -28,5 +28,11 @@
     - New material values based on updated temperature distribution
 
 *TO-DO, NOTES AND COMMENTS*:
-- Remove any indication of uhat because we are not doing mesh deformation
-- add angles, permeability and other parameters to the initialization step
+- create surrogate model for mu in terms of B and T
+    - didn't work; diverges as B gets large outside of the range, which is as expected
+    - normal order polynomials can't handle decay, which is why we opted for a custom method for the motor :-(
+- create coupled problem for LINEAR PROBLEM
+    - CONSTANT PERMEABILITY, RESISTANCE AND SOURCE TERM
+    - use as a way to test the mixed problem formulation
+- integrate the nonlinear permeability (without temperature)
+- introduce source terms 

@@ -23,7 +23,7 @@ def fit_exponential():
 
 # ---------------------------------------------------------------
 
-file_name   = 'Magnetic alloy, silicon core iron C.tab'
+file_name   = 'input_files/Magnetic alloy, silicon core iron C.tab'
 # file_name   = '../permeability/Magnetic alloy, silicon core iron C.tab'
 data        = np.genfromtxt(file_name,skip_header = 1, delimiter = '\t')
 H_data      = data[:,0]

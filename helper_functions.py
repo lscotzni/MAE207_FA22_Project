@@ -5,7 +5,7 @@ from msh2xdmf import import_mesh
 def initialize_parameters():
     p = 12
     rpm = 3000
-    I_amp = 0
+    I_amp = 30
     s = p*3
     Hc = 838.e3
 
@@ -35,9 +35,16 @@ def get_subdomain_indices():
 
     return iron_sub, pm_sub, winding_sub, ag_sub
 
-def initFunctionSpace(mesh):
+def initFunctionSpace(mesh, manual_iter=False):
     V_em = FunctionSpace(mesh, 'P', 1) # FUNCTION SPACE FOR EM PDE
     V_t = FunctionSpace(mesh, 'P', 1) # FUNCTION SPACE FOR THERMAL PDE
     V_S = FunctionSpace('R', 0) # FUNCTION SPACE FOR SOURCE TERM (CURRENT DENSITY)
+    if manual_iter:
+        return V_em, V_t, V_S
+    else:
+        Ae = FiniteElement('P', mesh.ufl_cell(), 1)
+        Te = FiniteElement('P', mesh.ufl_cell(), 1)
+        MF = FunctionSpace(mesh, Ae*Te)
+        return MF
     
-    return V_em, V_t, V_S
+    
