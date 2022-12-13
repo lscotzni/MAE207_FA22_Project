@@ -79,53 +79,27 @@ class CoupledFEAClass(object):
         EM_bc = self.setBC_EM()
         EM_res = self.assemble_EM_res(self.A_z, self.T, u, self.i_amp, self.dx, self.p, self.s,
                                     self.Hc, self.mech_angle, self.elec_angle)
-        # print(type(EM_res))
-        # exit()
-        # V = FunctionSpace(self.mesh, 'P', 1) # FUNCTION SPACE FOR THERMAL PDE
-        # self.T = Function(V)
-        # v = TestFunction(V)
 
         ''' Temperature PDE '''
         Temp_res = self.assemble_Temp_res(self.A_z, u, self.T, v, self.dx, self.p, self.s)
-        # boundary_markers = MeshFunction("size_t", self.mesh, self.mesh.topology().dim()-1, 0)
-        # outer_bound = OuterBoundary()
-        # outer_bound.mark(boundary_markers, 1)
-        # bc = DirichletBC(V, Constant(70), outer_bound)
-        # a, L = self.assemble_Temp_res(self.T, v, self.dx, self.p, self.s)
-        # a, L  = lhs(Temp_res), rhs(Temp_res)
-        # self.T = Function(V)
-        # solve(a == L,self.T)
-        # solve(Temp_res  == 0, self.T)
-        # vtkfile_T = File('solutions/Temperature.pvd')
-        # vtkfile_T << self.T
-        # exit()
 
         self.res = EM_res + Temp_res
-        # self.res = Temp_res
 
         # SETTING UP SOLVER
-        '''
-        NEED:
-            - TRIAL FUNCTIONS
-            - DERIVATIVES
-        '''
-        # A_z_T, T_T = TrialFunctions(self.MF)
-        # solve(self.res == 0, self.MF)
-        if True:
-            Dres = derivative(self.res, self.MF, TrialFunction(self.MFS))
-            ABS_TOL_M = 1e-6
-            REL_TOL_M = 1e-6
-            MAX_ITERS_M = 100
-            problem = NonlinearVariationalProblem(self.res, self.MF, EM_bc, Dres)
-            self.solver = NonlinearVariationalSolver(problem)
-            self.solver.parameters['nonlinear_solver']='snes'
-            self.solver.parameters['snes_solver']['line_search'] = 'bt'
-            self.solver.parameters['snes_solver']['absolute_tolerance'] = ABS_TOL_M
-            self.solver.parameters['snes_solver']['relative_tolerance'] = REL_TOL_M
-            self.solver.parameters['snes_solver']['maximum_iterations'] = MAX_ITERS_M
-            self.solver.parameters['snes_solver']['linear_solver']='mumps'
-            self.solver.parameters['snes_solver']['error_on_nonconvergence'] = False
-            self.solver.parameters['snes_solver']['report'] = True
+        Dres = derivative(self.res, self.MF, TrialFunction(self.MFS))
+        ABS_TOL_M = 1e-6
+        REL_TOL_M = 1e-6
+        MAX_ITERS_M = 100
+        problem = NonlinearVariationalProblem(self.res, self.MF, EM_bc, Dres)
+        self.solver = NonlinearVariationalSolver(problem)
+        self.solver.parameters['nonlinear_solver']='snes'
+        self.solver.parameters['snes_solver']['line_search'] = 'bt'
+        self.solver.parameters['snes_solver']['absolute_tolerance'] = ABS_TOL_M
+        self.solver.parameters['snes_solver']['relative_tolerance'] = REL_TOL_M
+        self.solver.parameters['snes_solver']['maximum_iterations'] = MAX_ITERS_M
+        self.solver.parameters['snes_solver']['linear_solver']='mumps'
+        self.solver.parameters['snes_solver']['error_on_nonconvergence'] = False
+        self.solver.parameters['snes_solver']['report'] = True
         
     def solve_problem(self):
         self.solver.solve()
@@ -149,7 +123,6 @@ class CoupledFEAClass(object):
                     (exp_coeff[0] * exp(exp_coeff[1]*norm_B + exp_coeff[2]) + 1)
                 )
             )
-            # mu = 5500
             # [ 1.71232761e-02 -2.25810238e+00  3.33894181e+03]
             # FITTING OF MU AS A FUNCTION OF TEM
             mu = mu * (1.71232761e-02*T**2 -2.25810238e+00*T + 3.33894181e+03)/4000
@@ -216,8 +189,8 @@ class CoupledFEAClass(object):
 
     def ThermalConductivity(self, subdomain, T):
         if subdomain == 1 or subdomain == 2: # Electrical/Silicon/Laminated Steel
-            k = 30
-            # k = 54 - T * 3.33e-2
+            # k = 30
+            k = 54 - T * 3.33e-2
         elif subdomain >= 3 and subdomain <= 14: # NEODYMIUM
             k = 9 
         elif subdomain >= 15 and subdomain <= 50: # COPPER
@@ -245,70 +218,45 @@ class CoupledFEAClass(object):
         rho = 1.724e-8
         N = 12 # num windings
         A = self.winding_area # winding area
-        R = N**2*l_ef/A * rho * (1. + (T_avg - 20.)) # 
-        # R = N**2*l_ef/A * rho * (T_avg + (- 20. + 1))
-        # print(R)
-        # print(R*dx(subdomain))
-        # print(type(R*dx(subdomain)))
-        # print(assemble(R*dx(subdomain)))
-        # exit()
+        R = N**2*l_ef/A * rho * (1. + (T_avg - 20.))
         return R
     
     def AvgWindingTemperature(self, function, subdomain):
         # Need to integrate/average temperature over the subdomain
-        # print(type(self.MF))
-        # print(type(self.MF.sub(1)))
-        # print(self.MF.sub(1))
-        # exit()
 
-        _, T = self.MF.split()
         func_unit = interpolate(Constant(1.0), self.MF.sub(1).function_space().collapse())
+        integral = inner(function, func_unit) 
+        # don't want to assemble or use dx(subdomain) until the end
 
-        integral = inner(function, func_unit)
-        # print(integral)
-        # print(assemble(integral*dx(subdomain)))
-        
-        # area = self.getSubdomainArea(subdomain)
-        # avg_func = assemble(integral)
-
-        # avg_func = assemble(integral)/assemble(self.winding_area)
         return integral
 
     def QS(self, i_amp, A_z, u, T, v, dx, elec_angle, p):
         q = 0
         # CORE LOSSES
-        C = 20 # PLAY AROUND WITH THIS VALUE TO SHOW DIFFERENCE IN OUTPUT
+        C = 1 # PLAY AROUND WITH THIS VALUE TO SHOW DIFFERENCE IN OUTPUT
         B_magnitude = sqrt(A_z.dx(0)**2 + A_z.dx(1)**2)
         for i in [1,2]:
-            print(type(pow(B_magnitude,2)))
-            print(type(pow(B_magnitude,2)*self.dx(i+1)))
-            
-            # ec_loss = 2.*np.pi**2*self.f**2*self.l_ef*0.07*v*pow(B_magnitude,2)*self.dx(i)
+            # attempt at using EM eddy current loss
+            # ec_loss = 2.*np.pi**2*self.f**2*self.l_ef*0.07*v*pow(B_magnitude,2)*self.dx(i) 
             ec_loss = C * 2.*np.pi**2*self.f**2*self.l_ef*0.07*v*self.dx(i)
             q += ec_loss
 
+            # attempt at using EM hysteresis loss
             # h_loss = 55.*2.*np.pi*self.f*self.l_ef*v*self.dx(i)*pow(B_magnitude,1.76835)
             h_loss = C * 55.*2.*np.pi*self.f*self.l_ef*v*self.dx(i)
             q += h_loss
             
-
         # COPPER LOSSES
         winding_subdomain_start = 15
-        i_abc = self.compute_i_abc(i_amp, elec_angle)
+        i_abc = self.compute_i_abc(i_amp, elec_angle) # CURRENT DENSITY
         for i in range(p):
-            T_avg = self.AvgWindingTemperature(function=T, subdomain=15+3*i)
-            # print(T_avg)
-            print(type(T_avg))
-            T_avg = 20
-            R = self.AvgCopperResistance(subdomain=15+3*i, T_avg=T_avg)
-            # R = self.AvgCopperResistance()
-            # print(R)
+            # T_avg = self.AvgWindingTemperature(function=T, subdomain=15+3*i) # attempt at using R(T)
+            T_avg = 20 # using since the above didn't work
+            # R = self.AvgCopperResistance(subdomain=15+3*i, T_avg=T_avg)
+            R = self.AvgCopperResistance(subdomain=15+3*i)
 
-            # q += Constant(R) * v*(Constant(i_abc[1]**2)*dx(15+3*i) + Constant(i_abc[0]**2)*dx(15+3*(i+1)) + \
-            #     Constant(i_abc[2]**2)*dx(15+3*(i+2)))
             q += 12 * R * v * self.winding_area * (i_abc[1])**2 * dx(15+3*i) + \
                 12 * R * v * self.winding_area * (i_abc[0])**2 * dx(15+3*i+1) + \
                 12 * R * v * self.winding_area * (i_abc[2])**2 * dx(15+3*i+2)
-            # q += 12. * self.winding_area * R * (i_abc[1])**2 * v * dx(15+3*i)
-        
+
         return q

@@ -89,8 +89,11 @@ if __name__ == '__main__':
         plt.plot(sm_class.B_data[i], sm_class.mu_data[i], label='T = {}'.format(T_val))
         max_mu[i] = np.max(sm_class.mu_data[i])
         print(np.max(sm_class.mu_data[i]))
+    plt.xlabel('|B| (T)')
+    plt.ylabel('Relative Permeability (mu/mu_0)')
 
     plt.legend()
+    plt.savefig('permeability_temp_fitting.pdf')
 
     # plt.figure(2)
     # for i, T_val in enumerate(sm_class.T_vals):
@@ -124,5 +127,8 @@ if __name__ == '__main__':
     plt.plot(sm_class.T_vals[:-1], p_opt[0]*sm_class.T_vals[:-1]**2 + p_opt[1]*sm_class.T_vals[:-1] + p_opt[2], '*-', label='fitting') # QUADRATIC-LIKE SHAPE; NEGATE LAST VALUE
     plt.grid()
     plt.legend()
+    plt.xlabel('Temperature (C)')
+    plt.ylabel('Max Relative Permeability (mu/mu_0)')
+    plt.savefig('max_permeability_temp_fitting.pdf')
 
     plt.show()

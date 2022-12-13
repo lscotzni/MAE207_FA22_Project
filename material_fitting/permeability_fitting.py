@@ -130,6 +130,7 @@ if __name__ == '__main__':
     plt.xlim([0, 3])
     plt.ylim([0, 5000])
     plt.legend()
+    plt.savefig('permeability_fitting.pdf')
 
     plt.show()
     exit()
